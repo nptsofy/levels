@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {
     Client,
     GatewayIntentBits,
@@ -23,79 +25,80 @@ const client = new Client({
 
 const PREFIX = "!";
 const XP_PER_MESSAGE = 15;
-const XP_COOLDOWN = 10 * 1000; // 10s
+const XP_COOLDOWN = 10 * 1000;
 const GUILD_ID = "1470121923240395005";
 
 const cooldowns = new Map();
 
-// ===== LEVEL FORMULA =====
+// XP formula
 function getRequiredXP(level) {
     return 5 * (level ** 2) + 50 * level + 100;
 }
 
-// ===== RANK CARD GENERATOR =====
+// ===== PREMIUM RANK CARD =====
 async function generateRankCard({ username, avatarURL, level, rank, currentXP, requiredXP }) {
     const width = 1000;
-    const height = 300;
+    const height = 350;
 
     const canvas = Canvas.createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
-    // Background (solid dark red/black)
-    ctx.fillStyle = "#0A0204";
+    // Gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, "#0A1A3A"); // deep navy
+    gradient.addColorStop(1, "#1E4F9A"); // bright blue
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
     // Avatar
     const avatar = await Canvas.loadImage(avatarURL);
-    const avatarSize = 220;
+    const avatarSize = 200;
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(160, height / 2, avatarSize / 2, 0, Math.PI * 2);
+    ctx.arc(150, height / 2, avatarSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
     ctx.drawImage(avatar, 50, height / 2 - avatarSize / 2, avatarSize, avatarSize);
     ctx.restore();
 
-    // Text
+    // TEXT
     ctx.fillStyle = "#FFFFFF";
     ctx.textAlign = "left";
 
-    ctx.font = "40px Sans-serif";
-    ctx.fillText(username, 300, 90);
+    // Username
+    ctx.font = "50px Sans-serif";
+    ctx.fillText(username, 300, 100);
 
+    // Level + Rank
     ctx.font = "32px Sans-serif";
-    ctx.fillText(`Level: ${level}`, 300, 150);
-    ctx.fillText(`Rank: ${rank}`, 300, 200);
+    ctx.fillText(`LVL ${level}   RANK ${rank}`, 300, 150);
 
+    // XP text
     ctx.font = "28px Sans-serif";
-    ctx.fillText(`${currentXP} / ${requiredXP} XP`, 300, 240);
+    ctx.fillText(`${currentXP} / ${requiredXP} XP`, 300, 200);
 
-    // XP bar
+    // XP BAR
     const barX = 300;
-    const barY = 260;
+    const barY = 240;
     const barWidth = 650;
-    const barHeight = 30;
+    const barHeight = 35;
 
     // Background bar
-    ctx.fillStyle = "#1A0A0D";
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
     roundRect(ctx, barX, barY, barWidth, barHeight, 15);
     ctx.fill();
 
-    // Fill
+    // Fill bar (neon cyan)
     const xpPercent = Math.min(currentXP / requiredXP, 1);
     const fillWidth = barWidth * xpPercent;
 
-    const gradient = ctx.createLinearGradient(barX, 0, barX + fillWidth, 0);
-    gradient.addColorStop(0, "#8D052C");
-    gradient.addColorStop(1, "#25030B");
-
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#00E5FF"; // neon cyan
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
 
     // Glow
-    ctx.shadowColor = "#8D052C";
+    ctx.shadowColor = "#00C8FF";
     ctx.shadowBlur = 25;
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
@@ -118,26 +121,23 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
-// ===== XP HANDLER (messages) =====
+// ===== XP HANDLER =====
 client.on("messageCreate", async (message) => {
     if (!message.guild || message.author.bot) return;
 
     const userId = message.author.id;
     const key = `${message.guild.id}.${userId}`;
 
-    // Cooldown
     const now = Date.now();
     const last = cooldowns.get(key) || 0;
     if (now - last < XP_COOLDOWN) return;
     cooldowns.set(key, now);
 
-    // Get data
     let data = await db.get(key);
     if (!data) data = { xp: 0, level: 0 };
 
     data.xp += XP_PER_MESSAGE;
 
-    // Level up
     let leveledUp = false;
     while (data.xp >= getRequiredXP(data.level)) {
         data.xp -= getRequiredXP(data.level);
@@ -148,10 +148,9 @@ client.on("messageCreate", async (message) => {
     await db.set(key, data);
 
     if (leveledUp) {
-        message.channel.send(`🎉 ${message.author} leveled up to **Level ${data.level}**!`);
+        message.channel.send(`${message.author} reached **Level ${data.level}**.`);
     }
 
-    // Prefix commands
     if (!message.content.startsWith(PREFIX)) return;
 
     const args = message.content.slice(PREFIX.length).trim().split(/\s+/);
@@ -190,21 +189,16 @@ async function getUserDataAndRank(guild, userId) {
 async function handleRank(message, user) {
     const { userData, rank } = await getUserDataAndRank(message.guild, user.id);
 
-    const level = userData.level;
-    const currentXP = userData.xp;
-    const requiredXP = getRequiredXP(level);
-
     const buffer = await generateRankCard({
         username: user.username,
         avatarURL: user.displayAvatarURL({ extension: "png", size: 256 }),
-        level,
+        level: userData.level,
         rank,
-        currentXP,
-        requiredXP
+        currentXP: userData.xp,
+        requiredXP: getRequiredXP(userData.level)
     });
 
     const attachment = new AttachmentBuilder(buffer, { name: "rank.png" });
-
     await message.channel.send({ files: [attachment] });
 }
 
@@ -212,12 +206,9 @@ async function handleLeaderboard(message) {
     const { users } = await getUserDataAndRank(message.guild, message.author.id);
 
     const top = users.slice(0, 10);
+    if (!top.length) return message.channel.send("No one has XP yet.");
 
-    if (!top.length) {
-        return message.channel.send("No one has XP yet.");
-    }
-
-    let text = "🏆 **Leaderboard**\n\n";
+    let text = "**Leaderboard**\n\n";
     for (let i = 0; i < top.length; i++) {
         const u = await message.client.users.fetch(top[i].id).catch(() => null);
         const name = u ? u.username : "Unknown";
@@ -229,38 +220,28 @@ async function handleLeaderboard(message) {
 
 // ===== SLASH COMMANDS =====
 const slashCommands = [
-    {
-        name: "level",
-        description: "Show your level card"
-    },
-    {
-        name: "rank",
-        description: "Show your level card"
-    },
-    {
-        name: "leaderboard",
-        description: "Show the server leaderboard"
-    }
+    { name: "level", description: "Show your level card" },
+    { name: "rank", description: "Show your level card" },
+    { name: "leaderboard", description: "Show the server leaderboard" }
 ];
 
 client.once("ready", async () => {
     console.log(`Logged in as ${client.user.tag}`);
 
-    // Register guild slash commands
-    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+    const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
     try {
         await rest.put(
             Routes.applicationGuildCommands(client.user.id, GUILD_ID),
             { body: slashCommands }
         );
-        console.log("Slash commands registered (guild).");
+        console.log("Slash commands registered.");
     } catch (err) {
-        console.error("Error registering slash commands:", err);
+        console.error("Slash command error:", err);
     }
 });
 
-// Slash interaction handler
+// Slash handler
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -268,21 +249,16 @@ client.on("interactionCreate", async (interaction) => {
         const user = interaction.user;
         const { userData, rank } = await getUserDataAndRank(interaction.guild, user.id);
 
-        const level = userData.level;
-        const currentXP = userData.xp;
-        const requiredXP = getRequiredXP(level);
-
         const buffer = await generateRankCard({
             username: user.username,
             avatarURL: user.displayAvatarURL({ extension: "png", size: 256 }),
-            level,
+            level: userData.level,
             rank,
-            currentXP,
-            requiredXP
+            currentXP: userData.xp,
+            requiredXP: getRequiredXP(userData.level)
         });
 
         const attachment = new AttachmentBuilder(buffer, { name: "rank.png" });
-
         await interaction.reply({ files: [attachment] });
     }
 
@@ -290,12 +266,9 @@ client.on("interactionCreate", async (interaction) => {
         const { users } = await getUserDataAndRank(interaction.guild, interaction.user.id);
 
         const top = users.slice(0, 10);
+        if (!top.length) return interaction.reply("No one has XP yet.");
 
-        if (!top.length) {
-            return interaction.reply("No one has XP yet.");
-        }
-
-        let text = "🏆 **Leaderboard**\n\n";
+        let text = "**Leaderboard**\n\n";
         for (let i = 0; i < top.length; i++) {
             const u = await interaction.client.users.fetch(top[i].id).catch(() => null);
             const name = u ? u.username : "Unknown";
@@ -306,5 +279,5 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
-// ===== LOGIN =====
+// LOGIN
 client.login(process.env.DISCORD_TOKEN);
