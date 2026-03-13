@@ -39,82 +39,105 @@ function getRequiredXP(level) {
 
 // ===== UI CARD FUNCTION (SHOP-BOT STYLE, RED THEME) =====
 async function generateLevelCard(member, level, rank, currentXP, requiredXP) {
-  const canvas = createCanvas(1000, 350);
+
+  const canvas = createCanvas(900, 260);
   const ctx = canvas.getContext("2d");
 
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  // ===== BACKGROUND (RED PREMIUM GRADIENT) =====
+  const gradient = ctx.createLinearGradient(0, 0, 900, 0);
   gradient.addColorStop(0, "#2A0004");
   gradient.addColorStop(1, "#5A000A");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Avatar
+  // ===== AVATAR =====
   const avatar = await loadImage(
     member.user.displayAvatarURL({ extension: "png", size: 256 })
   );
 
-  // Glow ring
+  // Glow behind avatar
   ctx.save();
-  ctx.shadowColor = "rgba(255, 0, 60, 0.35)";
-  ctx.shadowBlur = 20;
+  ctx.shadowColor = "rgba(255, 0, 60, 0.45)";
+  ctx.shadowBlur = 25;
   ctx.beginPath();
-  ctx.arc(150, canvas.height / 2, 110, 0, Math.PI * 2);
-  ctx.fillStyle = "#2A0004";
+  ctx.arc(90, 90, 60, 0, Math.PI * 2);
+  ctx.fillStyle = "#1a0003";
   ctx.fill();
   ctx.restore();
 
   // Avatar circle
   ctx.save();
   ctx.beginPath();
-  ctx.arc(150, canvas.height / 2, 100, 0, Math.PI * 2);
+  ctx.arc(90, 90, 55, 0, Math.PI * 2);
   ctx.closePath();
   ctx.clip();
-  ctx.drawImage(avatar, 50, canvas.height / 2 - 100, 200, 200);
+  ctx.drawImage(avatar, 35, 35, 110, 110);
   ctx.restore();
 
-  // Text settings
-  ctx.fillStyle = "#FFFFFF";
+  // Thin avatar border
+  ctx.beginPath();
+  ctx.arc(90, 90, 60, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ff4b6a";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // ===== TEXT =====
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
 
   // Username
-  ctx.font = "bold 48px sans-serif";
-  ctx.fillText(member.displayName, 300, 90);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 40px sans-serif";
+  ctx.fillText(member.displayName, 170, 80);
 
   // Level + Rank
-  ctx.font = "28px sans-serif";
-  ctx.fillText(`LEVEL ${level}   •   RANK #${rank}`, 300, 140);
+  ctx.fillStyle = "#f5b5c0";
+  ctx.font = "24px sans-serif";
+  ctx.fillText(`LEVEL ${level}   •   RANK #${rank}`, 170, 115);
+
+  // Divider line
+  ctx.strokeStyle = "#772233";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(60, 150);
+  ctx.lineTo(840, 150);
+  ctx.stroke();
+
+  // XP label
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px sans-serif";
+  ctx.fillText("XP", 150, 200);
 
   // XP text
-  ctx.font = "24px sans-serif";
-  ctx.fillText(`${currentXP} / ${requiredXP} XP`, 300, 180);
+  ctx.fillStyle = "#f5b5c0";
+  ctx.font = "22px sans-serif";
+  ctx.fillText(`${currentXP} / ${requiredXP}`, 210, 200);
 
-  // XP bar
-  const barX = 300;
-  const barY = 230;
+  // ===== XP BAR =====
+  const barX = 150;
+  const barY = 215;
   const barWidth = 650;
-  const barHeight = 35;
+  const barHeight = 22;
 
   // Background bar
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
-  roundRect(ctx, barX, barY, barWidth, barHeight, 15);
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  roundRect(ctx, barX, barY, barWidth, barHeight, 11);
   ctx.fill();
 
   // Fill bar
-  const xpPercent = Math.min(currentXP / requiredXP, 1);
-  const fillWidth = barWidth * xpPercent;
+  const percent = Math.min(currentXP / requiredXP, 1);
+  const fillWidth = barWidth * percent;
 
-  ctx.fillStyle = "#FF003C";
-  roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
+  ctx.fillStyle = "#ff003c";
+  roundRect(ctx, barX, barY, fillWidth, barHeight, 11);
   ctx.fill();
 
-  // Glow on XP bar
+  // Glow on bar
   ctx.save();
-  ctx.shadowColor = "rgba(255, 0, 60, 0.45)";
-  ctx.shadowBlur = 20;
-  ctx.fillStyle = "#FF003C";
-  roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
+  ctx.shadowColor = "rgba(255, 0, 60, 0.5)";
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = "#ff003c";
+  roundRect(ctx, barX, barY, fillWidth, barHeight, 11);
   ctx.fill();
   ctx.restore();
 
