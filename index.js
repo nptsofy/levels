@@ -35,7 +35,7 @@ function getRequiredXP(level) {
     return 5 * (level ** 2) + 50 * level + 100;
 }
 
-// ===== PREMIUM RANK CARD =====
+// ===== PREMIUM RED RANK CARD =====
 async function generateRankCard({ username, avatarURL, level, rank, currentXP, requiredXP }) {
     const width = 1000;
     const height = 350;
@@ -43,28 +43,34 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     const canvas = Canvas.createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
-    // Gradient background
+    // Red gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#0A1A3A"); // deep navy
-    gradient.addColorStop(1, "#1E4F9A"); // bright blue
+    gradient.addColorStop(0, "#2A0004"); // deep dark red
+    gradient.addColorStop(1, "#5A000A"); // rich crimson
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Avatar
+    // Avatar with subtle red glow
     const avatar = await Canvas.loadImage(avatarURL);
     const avatarSize = 200;
 
     ctx.save();
+    ctx.shadowColor = "rgba(255, 0, 60, 0.35)";
+    ctx.shadowBlur = 25;
+
     ctx.beginPath();
     ctx.arc(150, height / 2, avatarSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
     ctx.drawImage(avatar, 50, height / 2 - avatarSize / 2, avatarSize, avatarSize);
+
     ctx.restore();
 
     // TEXT
     ctx.fillStyle = "#FFFFFF";
     ctx.textAlign = "left";
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 8;
 
     // Username
     ctx.font = "50px Sans-serif";
@@ -76,7 +82,7 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
 
     // XP text
     ctx.font = "28px Sans-serif";
-    ctx.fillText(`${currentXP} / ${requiredXP} XP`, 300, 200);
+    ctx.fillText(`${currentXP} / ${requiredXP} xp`, 300, 200);
 
     // XP BAR
     const barX = 300;
@@ -85,20 +91,21 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     const barHeight = 35;
 
     // Background bar
+    ctx.shadowBlur = 0;
     ctx.fillStyle = "rgba(255,255,255,0.15)";
     roundRect(ctx, barX, barY, barWidth, barHeight, 15);
     ctx.fill();
 
-    // Fill bar (neon cyan)
+    // Fill bar (flat neon red)
     const xpPercent = Math.min(currentXP / requiredXP, 1);
     const fillWidth = barWidth * xpPercent;
 
-    ctx.fillStyle = "#00E5FF"; // neon cyan
+    ctx.fillStyle = "#FF003C"; // neon red
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
 
     // Glow
-    ctx.shadowColor = "#00C8FF";
+    ctx.shadowColor = "rgba(255, 0, 60, 0.45)";
     ctx.shadowBlur = 25;
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
