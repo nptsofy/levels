@@ -43,6 +43,11 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     const canvas = Canvas.createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
+    // FIX TEXT RENDERING (this solves your weird characters)
+    ctx.direction = "ltr";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+
     // Red gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, "#2A0004");
@@ -50,31 +55,37 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Avatar with subtle red glow
+    // Load avatar
     const avatar = await Canvas.loadImage(avatarURL);
-    const avatarSize = 200;
 
+    // ===== THIN GLOW RING BEHIND AVATAR =====
     ctx.save();
     ctx.shadowColor = "rgba(255, 0, 60, 0.35)";
-    ctx.shadowBlur = 25;
+    ctx.shadowBlur = 20;
 
     ctx.beginPath();
-    ctx.arc(150, height / 2, avatarSize / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(avatar, 50, height / 2 - avatarSize / 2, avatarSize, avatarSize);
-
+    ctx.arc(150, height / 2, 110, 0, Math.PI * 2);
+    ctx.fillStyle = "#2A0004";
+    ctx.fill();
     ctx.restore();
 
-    // TEXT
+    // ===== AVATAR (NO GLOW ON THE AVATAR ITSELF) =====
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(150, height / 2, 100, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(avatar, 50, height / 2 - 100, 200, 200);
+    ctx.restore();
+
+    // ===== TEXT =====
     ctx.fillStyle = "#FFFFFF";
-    ctx.textAlign = "left";
     ctx.shadowColor = "rgba(0,0,0,0.6)";
     ctx.shadowBlur = 8;
 
     // Username
     ctx.font = "50px Arial";
-    ctx.fillText(username, 300, 100);
+    ctx.fillText(username, 300, 90);
 
     // Level + Rank
     ctx.font = "32px Arial";
@@ -84,7 +95,7 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     ctx.font = "28px Arial";
     ctx.fillText(`${currentXP} / ${requiredXP} xp`, 300, 200);
 
-    // XP BAR
+    // ===== XP BAR =====
     const barX = 300;
     const barY = 240;
     const barWidth = 650;
@@ -96,7 +107,7 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     roundRect(ctx, barX, barY, barWidth, barHeight, 15);
     ctx.fill();
 
-    // Fill bar (neon red)
+    // Fill bar
     const xpPercent = Math.min(currentXP / requiredXP, 1);
     const fillWidth = barWidth * xpPercent;
 
@@ -104,9 +115,9 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
 
-    // Glow
+    // Slight glow (Option B)
     ctx.shadowColor = "rgba(255, 0, 60, 0.45)";
-    ctx.shadowBlur = 25;
+    ctx.shadowBlur = 20;
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
     ctx.shadowBlur = 0;
