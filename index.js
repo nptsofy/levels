@@ -87,12 +87,12 @@ async function generateLevelCard(member, level, rank, currentXP, requiredXP) {
 
   // Username
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 40px sans-serif";
+  ctx.font = "bold 40px";   // NO FONT FAMILY
   ctx.fillText(member.displayName, 170, 80);
 
   // Level + Rank
   ctx.fillStyle = "#f5b5c0";
-  ctx.font = "24px sans-serif";
+  ctx.font = "24px";        // NO FONT FAMILY
   ctx.fillText(`LEVEL ${level}   •   RANK #${rank}`, 170, 115);
 
   // Divider line
@@ -105,12 +105,12 @@ async function generateLevelCard(member, level, rank, currentXP, requiredXP) {
 
   // XP label
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 26px sans-serif";
+  ctx.font = "bold 26px";   // NO FONT FAMILY
   ctx.fillText("XP", 150, 200);
 
   // XP text
   ctx.fillStyle = "#f5b5c0";
-  ctx.font = "22px sans-serif";
+  ctx.font = "22px";        // NO FONT FAMILY
   ctx.fillText(`${currentXP} / ${requiredXP}`, 210, 200);
 
   // ===== XP BAR =====
@@ -142,21 +142,6 @@ async function generateLevelCard(member, level, rank, currentXP, requiredXP) {
   ctx.restore();
 
   return canvas.toBuffer();
-}
-
-// Rounded rectangle helper
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
 }
 
 // ===== XP HANDLER =====
