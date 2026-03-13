@@ -45,8 +45,8 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
 
     // Red gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#2A0004"); // deep dark red
-    gradient.addColorStop(1, "#5A000A"); // rich crimson
+    gradient.addColorStop(0, "#2A0004");
+    gradient.addColorStop(1, "#5A000A");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
@@ -73,15 +73,15 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     ctx.shadowBlur = 8;
 
     // Username
-    ctx.font = "50px Sans-serif";
+    ctx.font = "50px Arial";
     ctx.fillText(username, 300, 100);
 
     // Level + Rank
-    ctx.font = "32px Sans-serif";
+    ctx.font = "32px Arial";
     ctx.fillText(`LVL ${level}   RANK ${rank}`, 300, 150);
 
     // XP text
-    ctx.font = "28px Sans-serif";
+    ctx.font = "28px Arial";
     ctx.fillText(`${currentXP} / ${requiredXP} xp`, 300, 200);
 
     // XP BAR
@@ -96,11 +96,11 @@ async function generateRankCard({ username, avatarURL, level, rank, currentXP, r
     roundRect(ctx, barX, barY, barWidth, barHeight, 15);
     ctx.fill();
 
-    // Fill bar (flat neon red)
+    // Fill bar (neon red)
     const xpPercent = Math.min(currentXP / requiredXP, 1);
     const fillWidth = barWidth * xpPercent;
 
-    ctx.fillStyle = "#FF003C"; // neon red
+    ctx.fillStyle = "#FF003C";
     roundRect(ctx, barX, barY, fillWidth, barHeight, 15);
     ctx.fill();
 
